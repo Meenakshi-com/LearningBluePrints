@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management SDLC Blueprint (Sharable)</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --sidebar-bg: #ffffff;
+            --text-color: #212529;
+            --primary-color: #0d6efd;
+            --border-color: #dee2e6;
+            --hover-color: #e9ecef;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+
+        /* Sidebar Tree Layout */
+        #sidebar {
+            width: 320px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        #sidebar h3 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tree-node {
+            margin-left: 15px;
+            user-select: none;
+        }
+
+        .tree-label {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        .tree-label:hover {
+            background-color: var(--hover-color);
+        }
+
+        .tree-label.active {
+            background-color: var(--hover-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .toggle-btn {
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #6c757d;
+        }
+
+        .children-container {
+            display: block;
+        }
+
+        .children-container.collapsed {
+            display: none;
+        }
+
+        /* Content Panel Layout */
+        #main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .action-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--hover-color);
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        button.share-btn {
+            background: #198754;
+            color: white;
+            border-color: #198754;
+        }
+
+        button.danger {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        #doc-view {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            min-height: 400px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        #doc-title {
+            margin-top: 0;
+            font-size: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        #doc-body {
+            line-height: 1.6;
+            outline: none;
+            min-height: 300px;
+        }
+
+        .ai-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Tree Navigation -->
+    <div id="sidebar">
+        <h3>📋 Blueprint Modules</h3>
+        <div class="action-bar">
+            <button onclick="addNewNode()" style="font-size: 0.8rem; padding: 4px 8px;">+ Add Topic</button>
+        </div>
+        <div id="tree-root"></div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div id="main-content">
+        <div class="action-bar">
+            <button class="primary" onclick="saveCurrentContent()">💾 Save Locally</button>
+            <button class="share-btn" onclick="generateSharableUrl()">🔗 Generate Sharable URL</button>
+            <button onclick="toggleEditMode()" id="edit-toggle-btn">✍️ Lock/Unlock Text</button>
+            <button class="danger" onclick="deleteCurrentNode()" style="margin-left: auto;">🗑️ Delete Topic</button>
+        </div>
+        <div id="doc-view">
+            <h1 id="doc-title">Select a Module</h1>
+            <div id="doc-body" contenteditable="true">
+                Select a topic from the tree view on the left to start viewing, editing, or building out your SDLC baselined documentation.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultBlueprintData = [
+            {
+                id: "1",
+                title: "1. Product Discovery",
+                content: "<h2>Product Discovery Framework</h2><p>Define problem spaces, conduct user discovery interviews, and identify initial product-market fit metrics here.</p><ul><li>Problem Statement:</li><li>Target Audience:</li><li>Value Proposition:</li></ul>",
+                children: [
+                    { id: "1-1", title: "User Personas", content: "<h2>User Personas</h2><p>Outline user archetypes, behaviors, pain points, and core journeys.</p>", children: [] }
+                ]
+            },
+            {
+                id: "2",
+                title: "2. Strategy & Alignment",
+                content: "<h2>Product Strategy Frameworks</h2><p>Map structural organizational goals to product realities.</p>",
+                children: [
+                    { id: "2-1", title: "North Star Metrics", content: "<h2>North Star Metric (NSM)</h2><p><strong>Primary Core Metric:</strong> [Define your leading metric here]</p><p>Input Metrics:</p><ul><li>Metric A (Retention Impact)</li><li>Metric B (Engagement Impact)</li></ul>", children: [] },
+                    { id: "2-2", title: "OKRs", content: "<h2>Objectives & Key Results</h2><p>Align high-level goals down to engineering deliverables.</p>", children: [] },
+                    { id: "2-3", title: "OST Charts", content: "<h2>Opportunity Solution Tree (OST)</h2><p>Map clear tactical outcomes down to functional opportunities and technological solutions.</p>", children: [] }
+                ]
+            },
+            {
+                id: "3",
+                title: "3. UX, Design & Architecture",
+                content: "<h2>Design & Prototyping Stages</h2>",
+                children: [
+                    { id: "3-1", title: "Wireframes & Designs", content: "<h2>UI/UX Wireframes</h2><p>Link your Figma/Adobe XD canvas embeds or asset tracking boards below.</p>", children: [] },
+                    { id: "3-2", title: "Prototypes", content: "<h2>Interactive Prototypes</h2><p>Track clickable user flows and validation parameters.</p>", children: [] }
+                ]
+            },
+            {
+                id: "4",
+                title: "4. Execution Documentation",
+                content: "<h2>Execution Baseline</h2>",
+                children: [
+                    { id: "4-1", title: "PRD & Feature Specs", content: "<h2>Product Requirement Document (PRD)</h2><p><strong>1. Executive Summary:</strong></p><p><strong>2. Scope & Requirements:</strong></p><p><strong>3. User Stories & Tech Edge Cases:</strong></p>", children: [] },
+                    { id: "4-2", title: "AI Support Integration <span class='ai-badge'>AI Enabled</span>", content: "<h2>AI Orchestration & Prompts</h2><p>Document the artificial intelligence tools, prompts, and automated validation scripts utilized across the lifecycle.</p>", children: [] }
+                ]
+            },
+            {
+                id: "5",
+                title: "5. Engineering & Quality",
+                content: "<h2>SDLC Engineering Frameworks</h2>",
+                children: [
+                    { id: "5-1", title: "Development Tracks", content: "<h2>Sprint & Code Milestones</h2><p>Define architecture stacks, repository branches, and deployment pipelines.</p>", children: [] },
+                    { id: "5-2", title: "Testing & QA", content: "<h2>Quality Assurance Suite</h2><p>Track UAT (User Acceptance Testing) cycles, functional unit parameters, and automated regressions.</p>", children: [] },
+                    { id: "5-3", title: "Deliverables Checklist", content: "<h2>Shippable Assets & Artifacts</h2>", children: [] }
+                ]
+            },
+            {
+                id: "6",
+                title: "6. Data & Maintenance",
+                content: "<h2>Post-Launch Infrastructure</h2>",
+                children: [
+                    { id: "6-1", title: "Analytics Engines", content: "<h2>Data & Telemetry Parameters</h2>", children: [] },
+                    { id: "6-2", title: "Funnel Analysis", content: "<h2>Conversion & Dropoff Funnels</h2>", children: [] },
+                    { id: "6-3", title: "Maintenance & Scale", content: "<h2>DevOps Maintenance & Technical Debt</h2>", children: [] }
+                ]
+            }
+        ];
+
+        let blueprintData = defaultBlueprintData;
+        let currentNodeId = null;
+
+        // Base64 UTF-8 safe encoding helper functions
